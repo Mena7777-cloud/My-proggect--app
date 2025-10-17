@@ -1,12 +1,3 @@
-inventory[selected_id] = {
-                        "name": new_name,
-                        "quantity": new_quantity,
-                        "price": new_price
-                    }
-                    save_inventory(inventory)
-                    st.success(f"تم تحديث بيانات المنتج '{new_name}' بنجاح!")
-                    st.rerun() # لإعادة تحميل الصفحة وعرض البيانات المحدثة
-
 # 4. حذف منتج
 elif action == "حذف منتج":
     st.header("حذف منتج")
@@ -26,5 +17,5 @@ elif action == "حذف منتج":
                 del inventory[selected_id_to_delete]
                 save_inventory(inventory)
                 st.success(f"تم حذف المنتج '{product_name_to_delete}' بنجاح.")
-                st.rerun() # لإعادة تحميل الصفحة
+                st.rerun()
     
