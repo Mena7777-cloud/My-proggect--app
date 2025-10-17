@@ -13,7 +13,10 @@ def load_inventory():
         return {}
     try:
         with open(FILE_NAME, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            content = f.read()
+            if not content:
+                return {}
+            return json.loads(content)
     except (json.JSONDecodeError, FileNotFoundError):
         return {}
 
@@ -24,10 +27,11 @@ def save_inventory(inventory_data):
 
 # --- واجهة التطبيق الرئيسية ---
 
-st.set_page_config(page_title="نظام إدارة التخزينن", page_icon="📦", layout="wide")
+st.set_page_config(page_title="نظام إدارة التخزين", page_icon="📦", layout="wide")
 
-st.title("📦 نظام إدارة التخزن")
-st.write("Storage Management System")
+st.title("📦 نظام إدارة التخزين")
+st.write("Storage Management System") 
+st.write("نظام ادارة التخزين") # تمت إضافة العنوان الفرعي العربي
 
 # تحميل البيانات
 inventory = load_inventory()
@@ -36,32 +40,42 @@ inventory = load_inventory()
 st.sidebar.title("خيارات التشغيل")
 action = st.sidebar.radio(
     "اختر الإجراء المطلوب:",
-    ["عرض التخزين", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
+    ["عرض المنتجات والبحث", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"] # تم تعديل "عرض المخزون"
 )
 
 # --- تنفيذ الإجراءات ---
 
-if action == "عرض التخزين":
-    st.header("عرض التخزين الحالي")
+# 1. عرض المنتجات والبحث
+if action == "عرض المنتجات والبحث":
+    st.header("عرض المنتجات والبحث")
+    
+    search_query = st.text_input("ابحث عن منتج بالاسم:")
+
     if not inventory:
-        st.info("التخزين فارغ حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.")
+        st.info("لا توجد منتجات مخزنة حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.") # تم التعديل
     else:
         product_list = []
-        for product_id, details in inventory.items():
-            product_list.append({
-                'معرف المنتج': product_id,
-                'اسم المنتج': details['name'],
-                'الكمية': details['quantity'],
-                'السعر (للقطعة)': f"{details.get('price', 0):.2f}"
-            })
-        st.table(product_list)
+        filtered_inventory = {pid: data for pid, data in inventory.items() if search_query.lower() in data['name'].lower()}
 
+        if not filtered_inventory:
+            st.warning(f"لم يتم العثور على منتجات تطابق البحث: '{search_query}'")
+        else:
+            for product_id, details in filtered_inventory.items():
+                product_list.append({
+                    'معرف المنتج': product_id,
+                    'اسم المنتج': details['name'],
+                    'الكمية': details['quantity'],
+                    'السعر': details['price']
+                })
+            st.table(product_list)
+
+# 2. إضافة منتج جديد
 elif action == "إضافة منتج جديد":
     st.header("إضافة منتج جديد")
     with st.form("new_product_form", clear_on_submit=True):
         product_name = st.text_input("اسم المنتج")
         product_quantity = st.number_input("الكمية", min_value=0, step=1)
-        product_price = st.number_input("السعر (للقطعة)", min_value=0.0, format="%.2f")
+        product_price = st.number_input("السعر", min_value=0, step=1) 
         submitted = st.form_submit_button("إضافة المنتج")
 
         if submitted and product_name:
@@ -77,9 +91,11 @@ elif action == "إضافة منتج جديد":
             }
             save_inventory(inventory)
             st.success(f"تمت إضافة المنتج '{product_name}' بنجاح!")
+            st.rerun()
         elif submitted:
             st.error("الرجاء إدخال اسم المنتج.")
 
+# 3. تعديل منتج
 elif action == "تعديل منتج":
     st.header("تعديل بيانات منتج")
     if not inventory:
@@ -94,15 +110,3 @@ elif action == "تعديل منتج":
 
             with st.form("edit_form"):
                 new_name = st.text_input("اسم المنتج", value=product_data['name'])
-                new_quantity = st.number_input("الكمية", min_value=0, step=1, value=product_data['quantity'])
-                new_price = st.number_input("السعر", min_value=0.0, format="%.2f", value=product_data.get('price', 0.0))
-                
-                if st.form_submit_button("تحديث المنتج"):
-                    inventory[selected_id] = {
-                        "name": new_name,
-                        "quantity": new_quantity,
-                        "price": new_price
-                    }
-                    save_inventory(inventory)
-                    st.success("تم تحديث المنتج بنجاح!")
-                    st.rerun()
