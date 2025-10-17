@@ -111,3 +111,38 @@ elif action == "تعديل منتج":
             with st.form("edit_product_form"):
                 st.write(f"تقوم بتعديل: {product_data['name']}")
                 new_name = st.text_input("اسم المنتج الجديد", value=product_data['name'])
+                new_quantity = st.number_input("الكمية الجديدة", min_value=0, step=1, value=product_data['quantity'])
+                new_price = st.number_input("السعر الجديد", min_value=0, step=1, value=product_data.get('price', 0))
+                
+                # --- الزر الآن في مكانه الصحيح داخل النموذج ---
+                update_button = st.form_submit_button("تحديث المنتج")
+    
+                if update_button:
+                    inventory[selected_id] = {
+                        "name": new_name,
+                        "quantity": new_quantity,
+                        "price": new_price
+                    }
+                    save_inventory(inventory)
+                    st.success("تم تحديث المنتج بنجاح!")
+                    st.rerun()
+
+# 4. حذف منتج (تم الإصلاح النهائي)
+elif action == "حذف منتج":
+    st.header("حذف منتج")
+    if not inventory:
+        st.warning("لا توجد منتجات لحذفها.")
+    else:
+        # استخدام مفتاح فريد ومختلف لمنع التعارض
+        product_items_to_delete = [f"{details['name']} (ID: {pid})" for pid, details in inventory.items()]
+        selected_item_to_delete = st.selectbox("اختر المنتج للحذف:", product_items_to_delete, key="delete_item_selector")
+
+        if selected_item_to_delete:
+            selected_id_to_delete = selected_item_to_delete.split("ID: ")[1][:-1]
+            product_name_to_delete = inventory[selected_id_to_delete]['name']
+            
+            if st.button(f"تأكيد حذف '{product_name_to_delete}'"):
+                del inventory[selected_id_to_delete]
+                save_inventory(inventory)
+                st.success(f"تم حذف المنتج '{product_name_to_delete}' بنجاح.")
+                st.rerun()
