@@ -41,10 +41,10 @@ action = st.sidebar.radio(
 
 # --- تنفيذ الإجراءات ---
 
-if action == "عرض المخزون":
-    st.header("عرض المخزون الحالي")
+if action == "عرض التخزين":
+    st.header("عرض التخزين الحالي")
     if not inventory:
-        st.info("المخزون فارغ حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.")
+        st.info("التخزين فارغ حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.")
     else:
         product_list = []
         for product_id, details in inventory.items():
