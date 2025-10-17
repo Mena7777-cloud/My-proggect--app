@@ -7,7 +7,7 @@ FILE_NAME = 'inventory.json'
 
 # --- وظائف مساعدة ---
 
-# وظيفة لتحميل بيانات المخزون من ملف JSON
+# وظيفة لتحميل بيانات التخزين من ملف JSON
 def load_inventory():
     if not os.path.exists(FILE_NAME):
         return {}
@@ -17,7 +17,7 @@ def load_inventory():
     except (json.JSONDecodeError, FileNotFoundError):
         return {}
 
-# وظيفة لحفظ بيانات المخزون في ملف JSON
+# وظيفة لحفظ بيانات التخزين في ملف JSON
 def save_inventory(inventory_data):
     with open(FILE_NAME, 'w', encoding='utf-8') as f:
         json.dump(inventory_data, f, indent=4, ensure_ascii=False)
@@ -36,7 +36,7 @@ inventory = load_inventory()
 st.sidebar.title("خيارات التشغيل")
 action = st.sidebar.radio(
     "اختر الإجراء المطلوب:",
-    ["عرض المخزون", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
+    ["عرض التخزين", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
 )
 
 # --- تنفيذ الإجراءات ---
