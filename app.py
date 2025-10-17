@@ -65,7 +65,7 @@ if action == "عرض المنتجات والبحث":
                     'معرف المنتج': product_id,
                     'اسم المنتج': details['name'],
                     'الكمية': details['quantity'],
-                    'السعر': int(details.get('price', 0)) # تحويل السعر لعدد صحيح عند العرض
+                    'السعر': int(details.get('price', 0))
                 })
             st.table(product_list)
 
@@ -95,19 +95,19 @@ elif action == "إضافة منتج جديد":
         elif submitted:
             st.error("الرجاء إدخال اسم المنتج.")
 
-# 3. تعديل منتج (تم الإصلاح)
+# 3. تعديل منتج (تم الإصلاح النهائي)
 elif action == "تعديل منتج":
     st.header("تعديل بيانات منتج")
     if not inventory:
         st.warning("لا توجد منتجات لتعديلها.")
     else:
         product_items = [f"{details['name']} (ID: {pid})" for pid, details in inventory.items()]
-        selected_item = st.selectbox("اختر المنتج للتعديل:", product_items, key="edit_select")
-
+        selected_item = st.selectbox("اختر المنتج للتعديل:", product_items, key="edit_item_selector")
+    
         if selected_item:
             selected_id = selected_item.split("ID: ")[1][:-1]
             product_data = inventory[selected_id]
-
-            with st.form("edit_form"):
+    
+            with st.form("edit_product_form"):
                 st.write(f"تقوم بتعديل: {product_data['name']}")
-                new_name = st.text_input("اسم المنتج", value=product_data['name'])
+                new_name = st.text_input("اسم المنتج الجديد", value=product_data['name'])
