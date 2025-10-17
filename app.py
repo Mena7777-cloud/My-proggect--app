@@ -24,10 +24,10 @@ def save_inventory(inventory_data):
 
 # --- واجهة التطبيق الرئيسية ---
 
-st.set_page_config(page_title="نظام إدارة المخزون", page_icon="📦", layout="wide")
+st.set_page_config(page_title="نظام إدارة التخزينن", page_icon="📦", layout="wide")
 
-st.title("📦 نظام إدارة المخزون")
-st.write("واجهة بسيطة لإدارة مخزون المنتجات بشكل احترافي (Professional).")
+st.title("📦 نظام إدارة التخزن")
+st.write(Storage Management System).")
 
 # تحميل البيانات
 inventory = load_inventory()
