@@ -27,7 +27,7 @@ def save_inventory(inventory_data):
 st.set_page_config(page_title="نظام إدارة التخزينن", page_icon="📦", layout="wide")
 
 st.title("📦 نظام إدارة التخزن")
-st.write("Storage Management System").
+st.write("Storage Management System")
 
 # تحميل البيانات
 inventory = load_inventory()
