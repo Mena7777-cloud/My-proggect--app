@@ -31,7 +31,7 @@ st.set_page_config(page_title="نظام إدارة التخزين", page_icon="�
 
 st.title("📦 نظام إدارة التخزين")
 st.write("Storage Management System") 
-st.write("نظام ادارة التخزين") # تمت إضافة العنوان الفرعي العربي
+st.write("نظام ادارة التخزين")
 
 # تحميل البيانات
 inventory = load_inventory()
@@ -40,7 +40,7 @@ inventory = load_inventory()
 st.sidebar.title("خيارات التشغيل")
 action = st.sidebar.radio(
     "اختر الإجراء المطلوب:",
-    ["عرض المنتجات والبحث", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"] # تم تعديل "عرض المخزون"
+    ["عرض المنتجات والبحث", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
 )
 
 # --- تنفيذ الإجراءات ---
@@ -52,7 +52,7 @@ if action == "عرض المنتجات والبحث":
     search_query = st.text_input("ابحث عن منتج بالاسم:")
 
     if not inventory:
-        st.info("لا توجد منتجات مخزنة حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.") # تم التعديل
+        st.info("لا توجد منتجات مخزنة حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.")
     else:
         product_list = []
         filtered_inventory = {pid: data for pid, data in inventory.items() if search_query.lower() in data['name'].lower()}
@@ -65,7 +65,7 @@ if action == "عرض المنتجات والبحث":
                     'معرف المنتج': product_id,
                     'اسم المنتج': details['name'],
                     'الكمية': details['quantity'],
-                    'السعر': details['price']
+                    'السعر': int(details.get('price', 0)) # تحويل السعر لعدد صحيح عند العرض
                 })
             st.table(product_list)
 
@@ -95,18 +95,19 @@ elif action == "إضافة منتج جديد":
         elif submitted:
             st.error("الرجاء إدخال اسم المنتج.")
 
-# 3. تعديل منتج
+# 3. تعديل منتج (تم الإصلاح)
 elif action == "تعديل منتج":
     st.header("تعديل بيانات منتج")
     if not inventory:
         st.warning("لا توجد منتجات لتعديلها.")
     else:
         product_items = [f"{details['name']} (ID: {pid})" for pid, details in inventory.items()]
-        selected_item = st.selectbox("اختر المنتج للتعديل:", product_items)
+        selected_item = st.selectbox("اختر المنتج للتعديل:", product_items, key="edit_select")
 
         if selected_item:
             selected_id = selected_item.split("ID: ")[1][:-1]
             product_data = inventory[selected_id]
 
             with st.form("edit_form"):
+                st.write(f"تقوم بتعديل: {product_data['name']}")
                 new_name = st.text_input("اسم المنتج", value=product_data['name'])
