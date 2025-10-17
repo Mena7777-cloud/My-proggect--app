@@ -112,7 +112,7 @@ elif action == "تعديل منتج":
                 st.write(f"تقوم بتعديل: {product_data['name']}")
                 new_name = st.text_input("اسم المنتج الجديد", value=product_data['name'])
                 new_quantity = st.number_input("الكمية الجديدة", min_value=0, step=1, value=product_data['quantity'])
-                new_price = st.number_input("السعر الجديد", min_value=0, step=1, value=product_data.get('price', 0))
+                new_price = st.number_input("السعر الجديد", min_value=0, step=1, value=int(product_data.get('price', 0)))
                 
                 # --- الزر الآن في مكانه الصحيح داخل النموذج ---
                 update_button = st.form_submit_button("تحديث المنتج")
