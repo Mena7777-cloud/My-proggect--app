@@ -1,148 +1,131 @@
 import streamlit as st
-import json
-import os
+import pandas as pd
+from datetime import datetime, date
 
-# --- الإعدادات الأساسية ---
-FILE_NAME = 'inventory.json'
+# عنوان التطبيق
+st.title("إدارة التخزين - Storage Management System")
+st.header("نظام إدارة التخزين")
 
-# --- وظائف مساعدة ---
+# إعداد الجلسة للبيانات والتسجيل
+if 'products' not in st.session_state:
+    st.session_state.products = pd.DataFrame(columns=[
+        'name', 'description', 'quantity', 'price', 'category', 'date_added', 'expiry_date'
+    ])
 
-# وظيفة لتحميل بيانات التخزين من ملف JSON
-def load_inventory():
-    if not os.path.exists(FILE_NAME):
-        return {}
-    try:
-        with open(FILE_NAME, 'r', encoding='utf-8') as f:
-            content = f.read()
-            if not content:
-                return {}
-            return json.loads(content)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return {}
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# وظيفة لحفظ بيانات التخزين في ملف JSON
-def save_inventory(inventory_data):
-    with open(FILE_NAME, 'w', encoding='utf-8') as f:
-        json.dump(inventory_data, f, indent=4, ensure_ascii=False)
-
-# --- واجهة التطبيق الرئيسية ---
-
-st.set_page_config(page_title="نظام إدارة التخزين", page_icon="📦", layout="wide")
-
-st.title("📦 نظام إدارة التخزين")
-st.write("Storage Management System") 
-st.write("نظام ادارة التخزين")
-
-# تحميل البيانات
-inventory = load_inventory()
-
-# --- القائمة الجانبية للتنقل ---
-st.sidebar.title("خيارات التشغيل")
-action = st.sidebar.radio(
-    "اختر الإجراء المطلوب:",
-    ["عرض المنتجات والبحث", "إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
-)
-
-# --- تنفيذ الإجراءات ---
-
-# 1. عرض المنتجات والبحث
-if action == "عرض المنتجات والبحث":
-    st.header("عرض المنتجات والبحث")
-    
-    search_query = st.text_input("ابحث عن منتج بالاسم:")
-
-    if not inventory:
-        st.info("لا توجد منتجات مخزنة حاليًا. يمكنك إضافة منتجات جديدة من القائمة الجانبية.")
-    else:
-        product_list = []
-        filtered_inventory = {pid: data for pid, data in inventory.items() if search_query.lower() in data['name'].lower()}
-
-        if not filtered_inventory:
-            st.warning(f"لم يتم العثور على منتجات تطابق البحث: '{search_query}'")
+# نظام الصلاحيات: تسجيل دخول
+if not st.session_state.logged_in:
+    st.subheader("تسجيل الدخول للتحكم الكامل")
+    password = st.text_input("كلمة المرور:", type="password")
+    if st.button("تسجيل دخول"):
+        if password == "secret":  # غيري "secret" لكلمة مرور خاصة بيكِ
+            st.session_state.logged_in = True
+            st.success("تم تسجيل الدخول بنجاح! الآن تقدري تضيفي/تعدلي/تحذفي.")
+            st.rerun()  # إعادة تحميل الصفحة
         else:
-            for product_id, details in filtered_inventory.items():
-                product_list.append({
-                    'معرف المنتج': product_id,
-                    'اسم المنتج': details['name'],
-                    'الكمية': details['quantity'],
-                    'السعر': int(details.get('price', 0))
-                })
-            st.table(product_list)
+            st.error("كلمة المرور خاطئة. جربي تاني.")
+    st.info("بدون تسجيل، تقدري بس تشوفي العرض والبحث.")
+    is_admin = False
+else:
+    st.success("أنتِ مسجلة الدخول كمديرة. تقدري تتحكمي في كل حاجة.")
+    if st.button("تسجيل الخروج"):
+        st.session_state.logged_in = False
+        st.rerun()
+    is_admin = True
 
-# 2. إضافة منتج جديد
-elif action == "إضافة منتج جديد":
-    st.header("إضافة منتج جديد")
-    with st.form("new_product_form", clear_on_submit=True):
-        product_name = st.text_input("اسم المنتج")
-        product_quantity = st.number_input("الكمية", min_value=0, step=1)
-        product_price = st.number_input("السعر", min_value=0, step=1) 
-        submitted = st.form_submit_button("إضافة المنتج")
+# خيارات التشغيل في الـ sidebar
+options = ["عرض المنتجات والبحث"]
+if is_admin:
+    options += ["إضافة منتج جديد", "تعديل منتج", "حذف منتج"]
 
-        if submitted and product_name:
-            if not inventory:
-                new_id = "1"
+option = st.sidebar.selectbox("اختر الإجراء المطلوب:", options)
+
+# عرض المنتجات والبحث (متاح للجميع)
+if option == "عرض المنتجات والبحث":
+    st.subheader("عرض المنتجات والبحث")
+    search_term = st.text_input("ابحث عن منتج بالاسم (بالعربي):")
+    
+    if st.session_state.products.empty:
+        st.warning("لا توجد منتجات مخزنة حاليًا. يمكنك إضافة منتجات جديدة إذا كنتِ مسجلة الدخول.")
+    else:
+        # بحث غير حساس لحالة الحروف، بالعربي
+        if search_term:
+            filtered = st.session_state.products[
+                st.session_state.products['name'].str.contains(search_term, case=False, na=False)
+            ]
+            if filtered.empty:
+                st.info("لم يتم العثور على منتجات تطابق البحث.")
             else:
-                new_id = str(max([int(k) for k in inventory.keys() if k.isdigit()] + [0]) + 1)
-            
-            inventory[new_id] = {
-                "name": product_name,
-                "quantity": product_quantity,
-                "price": product_price
-            }
-            save_inventory(inventory)
-            st.success(f"تمت إضافة المنتج '{product_name}' بنجاح!")
-            st.rerun()
-        elif submitted:
+                st.dataframe(filtered, use_container_width=True)
+        else:
+            st.dataframe(st.session_state.products, use_container_width=True)
+
+# إضافة منتج جديد (للمدير فقط)
+elif option == "إضافة منتج جديد" and is_admin:
+    st.subheader("إضافة منتج جديد")
+    with st.form("add_product_form"):
+        name = st.text_input("اسم المنتج (بالعربي):", max_chars=50)
+        description = st.text_area("الوصف التفصيلي:")
+        quantity = st.number_input("الكمية:", min_value=0, step=1)
+        price = st.number_input("السعر:", min_value=0.0, step=0.01)
+        category = st.selectbox("الفئة:", ["غذاء", "إلكترونيات", "ملابس", "أخرى"])
+        expiry_date = st.date_input("تاريخ الصلاحية (YYYY-MM-DD):", min_value=date.today())
+        
+        submitted = st.form_submit_button("إضافة المنتج")
+    
+    if submitted:
+        if name:
+            new_product = pd.DataFrame({
+                'name': [name],
+                'description': [description],
+                'quantity': [quantity],
+                'price': [price],
+                'category': [category],
+                'date_added': [datetime.now().strftime("%Y-%m-%d")],  # تاريخ غربي تلقائي
+                'expiry_date': [expiry_date.strftime("%Y-%m-%d")]
+            })
+            st.session_state.products = pd.concat([st.session_state.products, new_product], ignore_index=True)
+            st.success(f"تم إضافة المنتج '{name}' بنجاح!")
+        else:
             st.error("الرجاء إدخال اسم المنتج.")
 
-# 3. تعديل منتج (تم الإصلاح النهائي)
-elif action == "تعديل منتج":
-    st.header("تعديل بيانات منتج")
-    if not inventory:
-        st.warning("لا توجد منتجات لتعديلها.")
-    else:
-        product_items = [f"{details['name']} (ID: {pid})" for pid, details in inventory.items()]
-        selected_item = st.selectbox("اختر المنتج للتعديل:", product_items, key="edit_item_selector")
-    
-        if selected_item:
-            selected_id = selected_item.split("ID: ")[1][:-1]
-            product_data = inventory[selected_id]
-    
+# تعديل منتج (للمدير فقط)
+elif option == "تعديل منتج" and is_admin:
+    st.subheader("تعديل منتج")
+    if st.session_state.products.empty:
+        st.warning("لا توجد منتجات للتعديل.")else:
+        product_names = st.session_state.products['name'].tolist()
+        selected_name = st.selectbox("اختر المنتج للتعديل:", product_names)
+        if selected_name:
+            idx = st.session_state.products[st.session_state.products['name'] == selected_name].index[0]
             with st.form("edit_product_form"):
-                st.write(f"تقوم بتعديل: {product_data['name']}")
-                new_name = st.text_input("اسم المنتج الجديد", value=product_data['name'])
-                new_quantity = st.number_input("الكمية الجديدة", min_value=0, step=1, value=product_data['quantity'])
-                new_price = st.number_input("السعر الجديد", min_value=0, step=1, value=int(product_data.get('price', 0)))
+                name = st.text_input("اسم المنتج (جديد):", value=st.session_state.products.at[idx, 'name'])
+                description = st.text_area("الوصف:", value=st.session_state.products.at[idx, 'description'])
+                quantity = st.number_input("الكمية:", value=st.session_state.products.at[idx, 'quantity'], min_value=0)
+                price = st.number_input("السعر:", value=st.session_state.products.at[idx, 'price'], min_value=0.0)
+                category = st.selectbox("الفئة:", ["غذاء", "إلكترونيات", "ملابس", "أخرى"], index=["غذاء", "إلكترونيات", "ملابس", "أخرى"].index(st.session_state.products.at[idx, 'category']))
+                expiry_date = st.date_input("تاريخ الصلاحية:", value=date.fromisoformat(st.session_state.products.at[idx, 'expiry_date']))
                 
-                # --- الزر الآن في مكانه الصحيح داخل النموذج ---
-                update_button = st.form_submit_button("تحديث المنتج")
-    
-                if update_button:
-                    inventory[selected_id] = {
-                        "name": new_name,
-                        "quantity": new_quantity,
-                        "price": new_price
-                    }
-                    save_inventory(inventory)
-                    st.success("تم تحديث المنتج بنجاح!")
-                    st.rerun()
-
-# 4. حذف منتج (تم الإصلاح النهائي)
-elif action == "حذف منتج":
-    st.header("حذف منتج")
-    if not inventory:
-        st.warning("لا توجد منتجات لحذفها.")
-    else:
-        # استخدام مفتاح فريد ومختلف لمنع التعارض
-        product_items_to_delete = [f"{details['name']} (ID: {pid})" for pid, details in inventory.items()]
-        selected_item_to_delete = st.selectbox("اختر المنتج للحذف:", product_items_to_delete, key="delete_item_selector")
-
-        if selected_item_to_delete:
-            selected_id_to_delete = selected_item_to_delete.split("ID: ")[1][:-1]
-            product_name_to_delete = inventory[selected_id_to_delete]['name']
+                submitted = st.form_submit_button("حفظ التعديلات")
             
-            if st.button(f"تأكيد حذف '{product_name_to_delete}'"):
-                del inventory[selected_id_to_delete]
-                save_inventory(inventory)
-                st.success(f"تم حذف المنتج '{product_name_to_delete}' بنجاح.")
-                st.rerun()
+            if submitted:
+                st.session_state.products.at[idx, 'name'] = name
+                st.session_state.products.at[idx, 'description'] = description
+                st.session_state.products.at[idx, 'quantity'] = quantity
+                st.session_state.products.at[idx, 'price'] = price
+                st.session_state.products.at[idx, 'category'] = category
+                st.session_state.products.at[idx, 'expiry_date'] = expiry_date.strftime("%Y-%m-%d")
+                st.success(f"تم تعديل المنتج '{name}' بنجاح!")
+
+# حذف منتج (للمدير فقط)
+elif option == "حذف منتج" and is_admin:
+    st.subheader("حذف منتج")
+    if st.session_state.products.empty:
+        st.warning("لا توجد منتجات للحذف.")
+    else:
+        product_names = st.session_state.products['name'].tolist()
+        selected_name = st.selectbox("اختر المنتج للحذف:", product_names)
+        if st.button("حذف المنتج"):
+            st.session_state.products = st.session_state.products[st.session_state.products['name'] != selected_name
