@@ -1,2 +1,6 @@
-streamlit==1.32.0
-pandas==2.2.2
+[theme]
+primaryColor = "#007bff"  # أزرق احترافي للأزرار
+backgroundColor = "#f8f9fa"  # خلفية فاتحة
+secondaryBackgroundColor = "#e9ecef"  # خلفية الـ sidebar
+textColor = "#212529"  # نص غامق للوضوح
+font = "sans serif"  # خط احترافي
